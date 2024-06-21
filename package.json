@@ -1,0 +1,21 @@
+{
+  "name": "quantum-play-backend",
+  "version": "1.0.0",
+  "description": "P2P Gaming platform ",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "WebRTC",
+    "WebSocket",
+    "P2P-Gaming"
+  ],
+  "author": "Deepakkumar-Maurya",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
