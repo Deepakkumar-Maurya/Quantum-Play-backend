@@ -1,8 +1,9 @@
 import express from "express";
+import auth from "./auth.route";
 
 const Router = express.Router();
 
-
+Router.use("/auth", auth);
 
 Router.get("/", (req, res) => {
     res.json({
@@ -11,8 +12,8 @@ Router.get("/", (req, res) => {
         documentation: "https://github.com/P2PGaming/Quantum-Play-backend",
         ApiEndpoints: {
             "POST /": "Signalling endpoint for WebRTC",
-        }
-    })
-})
+        },
+    });
+});
 
-module.exports = Router
+export default Router;

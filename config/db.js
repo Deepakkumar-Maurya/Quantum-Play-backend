@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 
-
 const connectDB = async () => {
     const dburl = process.env.MONGO_URI;
     try {
@@ -12,6 +11,6 @@ const connectDB = async () => {
         console.log(error);
         process.exit(1);
     }
-}
+};
 
 export default connectDB;
