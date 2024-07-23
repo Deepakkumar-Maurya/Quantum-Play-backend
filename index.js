@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db";
+import ably from "./config/ably";
 import Router from "./routes/routes";
 
 const app = express();
@@ -12,6 +13,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // ** db connection
 connectDB();
+
+// ** ably connection
+// ably.connection.on("connected", () => {
+//     console.log("Connected to Ably!");
+// });
 
 // ** root route
 app.use("/", Router);
