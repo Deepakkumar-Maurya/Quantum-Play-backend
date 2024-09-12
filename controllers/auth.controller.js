@@ -2,23 +2,23 @@ import User from "../models/User.js";
 import { matchPassword, generateAuthToken } from "../helpers/auth.helper.js";
 
 const signup = async (req, res) => {
-    // ** input validations
-    if (!req.body.username || !req.body.email || !req.body.password) {
-        throw new Error("Please fill all the fields");
-    }
-    if (req.body.password.length < 4) {
-        throw new Error("Password must be at least 4 characters");
-    }
-    if (req.body.email.indexOf("@") === -1) {
-        throw new Error("Please enter a valid email");
-    }
-    if (req.body.username.length < 3) {
-        throw new Error("Username must be at least 3 characters");
-    }
-
-    const { username, email, password } = req.body;
-
     try {
+        // ** input validations
+        if (!req.body.username || !req.body.email || !req.body.password) {
+            throw new Error("Please fill all the fields");
+        }
+        if (req.body.password.length < 4) {
+            throw new Error("Password must be at least 4 characters");
+        }
+        if (req.body.email.indexOf("@") === -1) {
+            throw new Error("Please enter a valid email");
+        }
+        if (req.body.username.length < 3) {
+            throw new Error("Username must be at least 3 characters");
+        }
+    
+        const { username, email, password } = req.body;
+
         // ** check if user already exists
         const user = await User.findOne({ email: email });
         if (user) {
@@ -51,17 +51,17 @@ const signup = async (req, res) => {
 };
 
 const signin = async (req, res) => {
-    // ** input validations
-    if (!req.body.email || !req.body.password) {
-        throw new Error("Please fill all the fields");
-    }
-    if (req.body.email.indexOf("@") === -1) {
-        throw new Error("Please enter a valid email");
-    }
-
-    const { email, password } = req.body;
-
     try {
+        // ** input validations
+        if (!req.body.email || !req.body.password) {
+            throw new Error("Please fill all the fields");
+        }
+        if (req.body.email.indexOf("@") === -1) {
+            throw new Error("Please enter a valid email");
+        }
+    
+        const { email, password } = req.body;
+
         // ** check if user exists
         const user = await User.findOne({ email: email });
         if (!user) {
