@@ -1,30 +1,30 @@
 import User from "../models/User.js";
 import { matchPassword, generateAuthToken } from "../helpers/auth.helper.js";
+import createHttpError from "http-errors";
 
-const signup = async (req, res) => {
+const signup = async (req, res, next) => {
     try {
         // ** input validations
         if (!req.body.username || !req.body.email || !req.body.password) {
-            throw new Error("Please fill all the fields");
+            throw createHttpError.BadRequest("Please fill all the fields");
         }
         if (req.body.password.length < 4) {
-            throw new Error("Password must be at least 4 characters");
+            throw createHttpError.BadRequest("Password must be at least 4 characters");
         }
-        if (req.body.email.indexOf("@") === -1) {
-            throw new Error("Please enter a valid email");
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(req.body.email)) {
+            throw createHttpError.BadRequest("Please enter a valid email address");
         }
         if (req.body.username.length < 3) {
-            throw new Error("Username must be at least 3 characters");
+            throw createHttpError.BadRequest("Username must be at least 3 characters");
         }
-    
+
         const { username, email, password } = req.body;
 
         // ** check if user already exists
         const user = await User.findOne({ email: email });
         if (user) {
-            const error = new Error("User already exists");
-            error.statusCode = 409;
-            throw error;
+            throw createHttpError.Conflict("User already exists");
         }
 
         // ** create a new user
@@ -41,41 +41,33 @@ const signup = async (req, res) => {
         });
     } catch (error) {
         console.log(error.message);
-        const statusCode = error.statusCode || 400;
-        return res.status(statusCode).json({
-            success: false,
-            message: "Error creating new user",
-            error: error.message,
-        });
+        next(error);
     }
 };
 
-const signin = async (req, res) => {
+const signin = async (req, res, next) => {
     try {
         // ** input validations
         if (!req.body.email || !req.body.password) {
-            throw new Error("Please fill all the fields");
+            throw createHttpError.BadRequest("Please fill all the fields");
         }
-        if (req.body.email.indexOf("@") === -1) {
-            throw new Error("Please enter a valid email");
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(req.body.email)) {
+            throw createHttpError.BadRequest("Please enter a valid email");
         }
-    
+
         const { email, password } = req.body;
 
         // ** check if user exists
         const user = await User.findOne({ email: email });
         if (!user) {
-            const error = new Error("No such user found");
-            error.statusCode = 404;
-            throw error;
+            throw createHttpError.NotFound("No such user found");
         }
 
         // ** match password
         const isMatch = matchPassword(user, password);
         if (!isMatch) {
-            const error = new Error("Invalid password");
-            error.statusCode = 401;
-            throw error;
+            throw createHttpError.Unauthorized("Invalid password");
         }
 
         // ** generate a token
@@ -84,6 +76,7 @@ const signin = async (req, res) => {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24, // 1 days
         });
+
         return res.status(200).json({
             success: true,
             message: "User signed in successfully",
@@ -91,30 +84,24 @@ const signin = async (req, res) => {
         });
     } catch (error) {
         console.log(error.message);
-        const statusCode = error.statusCode || 400;
-        return res.status(statusCode).json({
-            success: false,
-            message: "Error while signing user",
-            error: error.message,
-        });
+        next(error);
     }
 };
 
-const logout = async (req, res) => {
+const logout = async (req, res, next) => {
     try {
         // ** clear the token
         res.clearCookie("token");
+
+        // ** update the token
+        await User.updateOne({ _id: req.params.id }, { token: "" });
 
         return res.status(200).json({
             success: true,
             message: "User signed out successfully",
         });
     } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: "Error while signing user out",
-            error: error.message,
-        });
+        next(error);
     }
 };
 

@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
 );
 
 // ** salt addition before saving the user
-userSchema.pre("save", function(next) {
+userSchema.pre("save", function (next) {
     addSalt(this, next);
 });
 

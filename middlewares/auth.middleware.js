@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import createHttpError from "http-errors";
 
 const isAuth = async (req, res, next) => {
     try {
@@ -7,9 +8,7 @@ const isAuth = async (req, res, next) => {
 
         //** header check
         if (!authHeader || authHeader == null || authHeader === "") {
-            const error = new Error("No token provided");
-            error.statusCode = 401;
-            throw error;
+            throw createHttpError.Unauthorized("No token provided");
         }
         const token = authHeader?.split(" ")[1];
 
@@ -18,14 +17,10 @@ const isAuth = async (req, res, next) => {
 
         const userFromDB = await User.findById(user.id);
         if (!userFromDB) {
-            const error = new Error("User not found");
-            error.statusCode = 401;
-            throw error;
+            throw createHttpError.Unauthorized("User not found");
         }
         if (userFromDB.token !== token) {
-            const error = new Error("Invalid token");
-            error.statusCode = 401;
-            throw error;
+            throw createHttpError.Unauthorized("Invalid token");
         }
 
         // ** add user to request
@@ -33,12 +28,7 @@ const isAuth = async (req, res, next) => {
         next();
     } catch (error) {
         console.log(error.message);
-        const statusCode = error.statusCode || 500;
-        return res.status(statusCode).json({
-            success: false,
-            message: "Error in authentication",
-            error: error.message,
-        });
+        next(error);
     }
 };
 

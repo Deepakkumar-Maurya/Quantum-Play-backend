@@ -1,5 +1,5 @@
 import express from "express";
-import auth from "./auth.route";
+import auth from "./auth.route.js";
 
 const Router = express.Router();
 
