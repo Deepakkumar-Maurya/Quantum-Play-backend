@@ -1,5 +1,6 @@
 import User from "../models/User.js";
-import { matchPassword, generateAuthToken } from "../helpers/auth.helper.js";
+import { matchPassword, generateAuthToken, compareTokenAndUser } from "../helpers/auth.helper.js";
+import { sendForgetPwdMail } from "../helpers/email.helper.js";
 import createHttpError from "http-errors";
 
 const signup = async (req, res, next) => {
@@ -9,14 +10,20 @@ const signup = async (req, res, next) => {
             throw createHttpError.BadRequest("Please fill all the fields");
         }
         if (req.body.password.length < 4) {
-            throw createHttpError.BadRequest("Password must be at least 4 characters");
+            throw createHttpError.BadRequest(
+                "Password must be at least 4 characters"
+            );
         }
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(req.body.email)) {
-            throw createHttpError.BadRequest("Please enter a valid email address");
+            throw createHttpError.BadRequest(
+                "Please enter a valid email address"
+            );
         }
         if (req.body.username.length < 3) {
-            throw createHttpError.BadRequest("Username must be at least 3 characters");
+            throw createHttpError.BadRequest(
+                "Username must be at least 3 characters"
+            );
         }
 
         const { username, email, password } = req.body;
@@ -70,8 +77,10 @@ const signin = async (req, res, next) => {
             throw createHttpError.Unauthorized("Invalid password");
         }
 
+        const isForgetPwd = false;
+
         // ** generate a token
-        const token = await generateAuthToken(user);
+        const token = await generateAuthToken(user, isForgetPwd);
         res.cookie("token", token, {
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24, // 1 days
@@ -105,4 +114,65 @@ const logout = async (req, res, next) => {
     }
 };
 
-export { signup, signin, logout };
+const forgetPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email: email });
+        if (!user) {
+            throw createHttpError.NotFound(
+                `No such user found with this email ${email}`
+            );
+        }
+
+        const isForgetPwd = true;
+
+        // ** generate a token
+        const resetToken = await generateAuthToken(user, isForgetPwd);
+
+        // ** save the token in db
+        await User.updateOne({ _id: user.id }, { token: resetToken });
+
+        const resetURL = `${req.protocol}://${req.get(
+            "host"
+        )}/auth/resetpassword/${resetToken}`;
+
+        const isMailSent = await sendForgetPwdMail(email, resetURL);
+        if (!isMailSent.success) {
+            throw createHttpError.InternalServerError(
+                `Error while sending mail to ${email}`
+            );
+        }
+
+        return res.status(200).json({
+            success: true,
+            message:
+                "A link has been sent to your email having validity of 2 minutes. Please click on the link to reset your password",
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+const resetPassword = async (req, res, next) => {
+    try {
+        const resetToken = req.params.resetToken;
+        const { newPassword } = req.body;
+
+        const isMatch = await compareTokenAndUser(resetToken);
+        if (!isMatch.success) {
+            throw createHttpError.BadRequest(isMatch.error);
+        }
+
+        const user = isMatch.user;
+        user.password = newPassword;
+        await user.save();
+        return res.status(200).json({
+            success: true,
+            message: "Password reset successfully",
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export { signup, signin, logout, forgetPassword, resetPassword };
